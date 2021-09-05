@@ -25,8 +25,20 @@ Distributed as-is; no warranty is given.
 #include <ESP8266WiFi.h>
 #endif
 #include <WiFi.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
 #include "arduino_secrets.h"
 
+Adafruit_BME280 bme;
+float temperature = 0;
+float humidity = 0;
+float pressure= 0;
+String temp ="";
+String hum ="";
+String pres ="";
+String vr1;
+String v1;
+//String readHumidity;
 /////////////////////
 // IFTTT Constants //
 /////////////////////
@@ -34,9 +46,8 @@ const char* IFTTTServer = "maker.ifttt.com";
 // IFTTT https por:
 const int httpsPort = 80;
 // IFTTT Name Event:
-const String MakerIFTTT_Event = "test";
+const String MakerIFTTT_Event = "esp32_tweet";
 // IFTTT private key:
-const String MakerIFTTT_Key = "YourKeyIFTTT";
 
 String httpHeader = "POST /trigger/"+MakerIFTTT_Event+"/with/key/"+MakerIFTTT_Key +" HTTP/1.1\r\n" +
                     "Host: " + IFTTTServer + "\r\n" +
@@ -77,28 +88,43 @@ void loop()
       Serial.read();
   }
 }
+/*
+void handle_OnConnect() {
+  temperature = bme.readTemperature();
+  humidity = bme.readHumidity();
+  pressure = bme.readPressure() / 100.0F;
+  //altitude = bme.readAltitude(SEALEVELPRESSURE_HPA);
+  //server.send(200, "text/html", SendHTML(temperature,humidity,pressure,altitude)); 
+}*/
+
 
 void postToIFTTT()
 {
   // Create a client, and initiate a connection
   WiFiClient client;
-
   if (client.connect(IFTTTServer, httpsPort) <= 0)
   {
     Serial.println(F("Failed to connect to server."));
     return;
   }
   Serial.println(F("Connected."));
+  
+  float temperature = (bme.readTemperature(),0);
+  temp.concat(temperature);
+  float humidity = (bme.readHumidity(),0);
+  hum.concat(humidity);
+ float pressure = (bme.readPressure(),0);
+ pres.concat(pressure);
+  //  String data="{\"value1\":\""+temp+"\",\"value2\":\""+hum+"\",\"value3\":\""+pres+"\"}";
 
-  // Set up our IFTTT post parameters:
-  String params1, params2,params3;
-  params1 = String(analogRead(A0));
-  params2 = String(analogRead(A0));
-  params3 = String(analogRead(A0));
+  //String data="{"value1 : "+temp+", value2 : " +hum+ ", value3 : "+pres+"}";
+  //  String data="{value1 : 25, value2 : 32, value3 : 8122}";
+   //String data="{value1 : "+temp+", value2 : "+hum+",value3 : " +pres+"}";
+  String data="{\"value1\":\"1\",\"value2\":\"1\"}";
 
-  String data="{\"value1\":\""+params1+"\",\"value2\":\""+params2+"\",\"value3\":\""+params3+"\"}";
 
   Serial.println(F("Posting to IFTTT!"));
+  
   //Serial.println(data.length());
 
   client.print(httpHeader);
